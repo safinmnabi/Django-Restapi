@@ -1,0 +1,263 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.1/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <title>Data Collect</title>
+  </head>
+  <body>
+    <div class="container">
+      <div class="d-flex justify-content-between mt-4">
+        <h1>Person Data</h1>
+        <div>
+          <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#exampleModal">
+            Create
+          </button>
+          <button type="button" id="logout" class="btn btn-primary">
+            Logout
+          </button>
+        </div>        
+      </div>
+      
+  
+      <table class="table">
+        <thead>
+          <tr>
+            <th scope="col">#</th>
+            <th scope="col">Name</th>
+            <th scope="col">Email</th>
+            <th scope="col">Mobile</th>
+            <th scope="col">Action</th>
+          </tr>
+        </thead>
+        <tbody id="data_loop">
+        </tbody>
+      </table>
+<!-- 
+      <div class="d-flex justify-content-center">
+        <button type="button" onclick="window.location.href='b.php'" class="m-2 btn btn-primary">A link</button>
+        <button type="button" onclick="window.location.href='b.php'" class="m-2 btn btn-secondary">B link</button>
+      </div> -->
+    </div>
+
+    <!-- Modal -->
+    <div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="exampleModalLabel">Add Person</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <form id="add_data">
+            <div class="container-fluid">
+              <div class="row">
+                <div class="col-md-12">
+                  <div class="mb-3">
+                    <input type="hidden" id="person_id">
+                    <label for="fullname" class="col-form-label">Fullname:</label>
+                    <input type="text" class="form-control" id="fullname">
+                  </div>
+                </div>
+              </div>
+              <div class="row">
+                <div class="col-md-6">
+                  <div class="mb-3">
+                    <label for="email" class="col-form-label">Email:</label>
+                    <input type="email" class="form-control" id="email">
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <div class="mb-3">
+                    <label for="mobile" class="col-form-label">Mobile:</label>
+                    <input type="text" class="form-control" id="mobile">
+                  </div>
+                </div>
+              </div>
+              <div class="row">
+                <div class="col-md-12">
+                  <div class="mb-3">
+                    <label for="mobile" class="col-form-label">Message:</label>
+                    <textarea class="form-control" id="message" rows="5"></textarea>
+                  </div>
+              </div>
+            </div>
+            </form>
+          </div>
+          <div class="modal-footer">
+            <input type="hidden" id="mode" value="Save">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            <button type="button" id="submit-data" class="btn btn-primary">Save</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.1/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script>
+      if (localStorage.getItem("X_DGS")) {
+        var _siteData = JSON.parse(localStorage.getItem("X_DGS"));
+        var current_time = new Date();
+        if (!(_siteData.expire_log > current_time.getTime())){
+          console.log("Session is dead")
+          window.location.href='login.html';
+        }
+      }else{
+        window.location.href='login.html';
+      }
+
+      var _fname = document.getElementById('fullname');
+      var _email = document.getElementById('email');
+      var _mobile = document.getElementById('mobile');
+      var _message = document.getElementById('message');
+
+      var modal_title = document.getElementById("exampleModalLabel");
+      var modal_submit = document.getElementById("submit-data");
+      var modal_person_id = document.getElementById("person_id");
+      var modal_mode = document.getElementById("mode");
+
+      var myModal = document.getElementById('exampleModal');
+      const modal = new bootstrap.Modal(myModal, {
+        backdrop: 'static'
+      });
+
+      myModal.addEventListener('hide.bs.modal', function () {
+        modal_title.innerText = "Create Person";
+        modal_submit.innerText = "Save";
+        modal_submit.style.display = "block";
+        document.getElementById("add_data").reset();
+      })
+
+      
+
+      var table = document.getElementById('data_loop');
+      function DataLoad(data) {
+        table.innerHTML = ""
+        data.forEach((i) => {
+          var viewBtn = '<button class="btn btn-sm btn-success me-2" onclick=ViewData("'+i.id+'");>View</button>';
+          var editBtn = '<a href="#" class="btn btn-sm btn-warning me-2" onclick=EditData("'+i.id+'");>Edit</a>';
+          var delBtn = '<a href="#" class="btn btn-sm btn-danger me-2" onclick=DelData("'+i.id+'");>Delete</a>';
+
+          table.innerHTML += '<tr><th scope="row">'+i.id+'</th><td>'+i.fullname+'</td><td>'+i.email+'</td><td>'+i.mobile+'</td><td>'+viewBtn+editBtn+delBtn+'</td></tr>';
+
+        });
+      }
+
+
+
+      const api = axios.create({
+        baseURL: 'http://127.0.0.1:8000/',
+        timeout: 5000
+      });
+
+      function table_show(){
+        api.get('shows/'+_siteData.email)
+        .then(function (response) {
+          // console.log(response.data);
+          DataLoad(response.data)         
+
+        })
+        .catch(function (error) {
+          console.log(error);
+        });
+      }
+
+      table_show();
+
+      document.getElementById("logout").addEventListener("click", function(e){
+        e.preventDefault();
+        localStorage.removeItem('X_DGS');
+        window.location.href='index.html'        
+
+      });
+
+      document.getElementById("submit-data").addEventListener("click", function(e){
+        e.preventDefault();             
+        api_url = 'person/'
+        if (modal_mode.value == "Edit") {
+          api_url = 'uperson/'+modal_person_id.value;
+        }
+        api.post(api_url,{
+          email: _email.value,
+          fullname: _fname.value,
+          mobile: _mobile.value,
+          message: _message.value,
+          userid: _siteData.email
+        })
+        .then(function (response) {
+          console.log(response.data);
+          if (response.data.result == "true") {
+            document.getElementById("add_data").reset();
+            table_show();
+            modal.hide(); 
+          }
+
+        })
+        .catch(function (error) {
+          console.log(error);
+        });
+
+      });
+
+      function ViewData(id) {        
+
+        api.get('show/'+id)
+        .then(function (response) {
+
+          _fname.value = response.data.fullname;
+          _email.value = response.data.email;
+          _mobile.value = response.data.mobile;
+          _message.value = response.data.message;
+          modal_title.innerText = "View Person";
+          modal_submit.innerText = "View";
+          modal_submit.style.display = "none";
+          modal_mode.value = "View";
+          modal_person_id.value = id;
+          modal.show();         
+
+        })
+        .catch(function (error) {
+          console.log(error);
+        });
+      }
+
+      function EditData(id) {
+        api.get('show/'+id)
+        .then(function (response) {
+
+          _fname.value = response.data.fullname;
+          _email.value = response.data.email;
+          _mobile.value = response.data.mobile;
+          _message.value = response.data.message;
+          modal_title.innerText = "Edit Person";
+          modal_submit.innerText = "Edit";
+          modal_mode.value = "Edit";
+          modal_person_id.value = id;
+          modal.show();         
+
+        })
+        .catch(function (error) {
+          console.log(error);
+        });
+      }
+      function DelData(id) {
+        api.delete('dperson/'+id)
+        .then(function (response) {      
+          console.log(response);
+          if (response.statusText == "OK") {
+            table_show();
+          }
+        })
+        .catch(function (error) {
+          console.log(error);
+        });
+      }
+
+    </script>
+  </body>
+</html>
